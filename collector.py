@@ -53,20 +53,23 @@ async def main():
                 games = (await response.json())["data"]
                 print('Collected games')
                 # print(prev, {game['id'] for game in games}, sep='\n')
-                if prev != {game['id'] for game in games}:
-                    for result in games:
-                        task = asyncio.ensure_future(fetch(result['id'], session, sem))
+                curr = {game['id'] for game in games}
+                if prev != curr:
+                    curr = prev.union(curr).difference(prev)
+                    for game_id in curr:
+                        task = asyncio.ensure_future(fetch(game_id, session, sem))
                         tasks.append(task)
                     responses = await asyncio.gather(*tasks)
                     print('Fetched all games')
                     tasks = []
                     prev = set()
-                    for i in range(len(games)):
+                    for i, game_id in enumerate(curr):
                         if responses[i]:
-                            prev.add(games[i]['id'])
-                            games[i]['xml'] = responses[i]
+                            prev.add(game_id)
+                            game = [game for game in games if game['id'] == game_id][0]
+                            game['xml'] = responses[i]
                             task = asyncio.ensure_future(
-                                write_file(games[i], fr'D:\datasets and shit\hs_games\{games[i]["id"]}.json'))
+                                write_file(game, fr'D:\datasets and shit\hs_games\{game_id}.json'))
                             tasks.append(task)
                             # count += 1
                     await asyncio.gather(*tasks)
