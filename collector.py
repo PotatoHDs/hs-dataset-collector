@@ -58,8 +58,10 @@ async def main():
                 print('Collected games')
                 # print(prev, {game['id'] for game in games}, sep='\n')
                 curr = {game['id'] for game in games}
-                if prev != curr and len(prev.union(curr).difference(prev)) > 200:
-                    curr = prev.union(curr).difference(prev)
+                difference = prev.union(curr).difference(prev)
+                print(f'Difference between prev and now is {len(difference)} games')
+                if len(difference) > 200:
+                    curr = difference
                     for game_id in curr:
                         game = [game for game in games if game_id == game['id']][0]
                         task = asyncio.ensure_future(fetch(game, session, sem))
@@ -70,8 +72,8 @@ async def main():
                     prev = curr
 
             end = time.time() - start
-            if 30 - end > 0:
-                await asyncio.sleep(30 - end)
+            if 300 - end > 0:
+                await asyncio.sleep(300 - end)
             print(f'It lasted for {end} seconds')
             # print(count)
 
